@@ -21,7 +21,7 @@ let buttonX, buttonY, buttonW, buttonH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH;
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
-let playBtnX, playBtnY, playBtnW = 75 * 0.9, playBtnH = 30 * 0.9;
+let playBtnX, playBtnY, playBtnW = 75 * 2, playBtnH = 30 * 2;
 
 let inCookScene = false;
 let resizing = false;
