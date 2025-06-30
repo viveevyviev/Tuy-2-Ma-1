@@ -21,7 +21,7 @@ let buttonX, buttonY, buttonW, buttonH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH;
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
-let playBtnX, playBtnY, playBtnW = 75 * 0.7, playBtnH = 30 * 0.7;
+let playBtnX, playBtnY, playBtnW = 75 * 0.9, playBtnH = 30 * 0.9;
 
 let inCookScene = false;
 let resizing = false;
@@ -82,7 +82,7 @@ function setup() {
 
   trashW = buttonSize2;
   trashH = buttonSize2;
-  trashX = width - trashW - 200;
+  trashX = width - trashW - 230;
   trashY = height - trashH - 15;
 
   buttonW = trashW;
