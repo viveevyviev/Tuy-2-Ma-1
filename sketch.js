@@ -12,8 +12,8 @@ let screenshotBtnImg, trashBtnImg, resetBtnImg, cookBtnImg, backBtnImg;
 let popupImg, playBtnImg;
 let bgImg, bgImg2;
 
-let buttonSize = 37;
-let buttonSize2 = 50;
+let buttonSize = 57;
+let buttonSize2 = 80;
 
 let flipHX, flipHY, flipVX, flipVY;
 let trashX, trashY, trashW, trashH;
@@ -82,7 +82,7 @@ function setup() {
 
   trashW = buttonSize2;
   trashH = buttonSize2;
-  trashX = width - trashW - 120;
+  trashX = width - trashW - 170;
   trashY = height - trashH - 15;
 
   buttonW = trashW;
