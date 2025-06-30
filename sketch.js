@@ -60,7 +60,7 @@ function setup() {
   }
   createCanvas(w, h);
 
-  let spawnerScale = 0.1;
+  let spawnerScale = 0.2;
   const w1 = 0.09 * w, w2 = 0.172185430 * w
   const h1 = 0.353200 * h, h2 = 0.588668 * h
   originalSpawners = [
