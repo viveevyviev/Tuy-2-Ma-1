@@ -3,7 +3,10 @@ let spawnerTraits = [];
 let originalSpawners = [];
 let player;
 let selectedTrait = null;
-let newTrait = null;
+
+let currentScene = 'intro'; // 'intro', 'tutorial', 'main', 'cook'
+
+let tutorialBtnImg, howtoImg, homeBtnImg; 
 
 let yearningImg, courageImg, attentiveImg;
 let nestledImg, anchoringImg, defiantImg, empatheticImg, vulnerableImg;
@@ -12,19 +15,18 @@ let screenshotBtnImg, trashBtnImg, resetBtnImg, cookBtnImg, backBtnImg;
 let popupImg, playBtnImg;
 let bgImg, bgImg2;
 
-// --- All UI element dimensions are now calculated in setup() ---
 let flipHX, flipHY, flipVX, flipVY;
 let trashX, trashY, trashW, trashH;
-let resetBtnX, resetBtnY, resetBtnW, resetBtnH; // Renamed for clarity
+let resetBtnX, resetBtnY, resetBtnW, resetBtnH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH;
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
 let playBtnX, playBtnY, playBtnW, playBtnH;
+let tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH;
+let homeBtnX, homeBtnY, homeBtnW, homeBtnH;
 
-let inCookScene = false;
 let resizing = false;
 let rotating = false;
-let showIntro = true;
 let takingScreenshot = false;
 
 function preload() {
@@ -47,10 +49,13 @@ function preload() {
   bgImg2 = loadImage('buttons/background2.png');
   popupImg = loadImage('buttons/popup.png');
   playBtnImg = loadImage('buttons/play.png');
+
+  tutorialBtnImg = loadImage('buttons/tutorial.png');
+  howtoImg = loadImage('buttons/howto.png');
+  homeBtnImg = loadImage('buttons/home.png');
 }
 
 function setup() {
-  // Keep the canvas responsive with a 16:9 aspect ratio
   let w = windowWidth;
   let h = w * 9 / 16;
   if (h > windowHeight) {
@@ -59,111 +64,106 @@ function setup() {
   }
   createCanvas(w, h);
 
-  // --- RESPONSIVE UI CALCULATIONS ---
-  // Define base sizes and margins as a percentage of the canvas width
-  let baseButtonSize = width * 0.055; // A good base size for most buttons
-  let largeButtonSize = width * 0.075; // For the main action buttons
-  let edgeMargin = width * 0.015;      // Margin from the edge of the canvas
-  let edgeMargin1 = width * 0.01;  
-  let buttonMargin = width * 0.0005;   // Margin between buttons
-  let buttonMargin1 = width * 0.00001;
+  let baseButtonSize = width * 0.055;
+  let largeButtonSize = width * 0.075;
+  let edgeMargin = width * 0.015;
+  let largeButtonMargin = width * 0.005; 
+  let baseButtonMargin = width * 0.01;
+  let verticalMargin = height * 0.02;
 
-  // --- Trait Spawners ---
-  let spawnerScale = width * 0.0001;
-  let spawnedTraitScale = 0.2; // This is the "30%" scale for new traits
+  let spawnerTargetSize = width * 0.11; 
+  let spawnedTraitScale = 0.2; 
 
-  // Spawner positions are already nicely responsive!
   const w1 = 0.09 * w, w2 = 0.172185430 * w;
   const h1 = 0.353200 * h, h2 = 0.588668 * h;
   originalSpawners = [
-    { img: yearningImg,    x: w1,  y: h1 },
-    { img: courageImg,     x: w2, y: h1 },
-    { img: attentiveImg,   x: w - w2, y: h1 },
-    { img: nestledImg,     x: w1, y: h2 },
-    { img: anchoringImg,   x: w2, y: h2 },
-    { img: defiantImg,     x: w - w2, y: h2 },
-    { img: empatheticImg,  x: w - w1, y: h1 },
-    { img: vulnerableImg,  x: w - w1, y: h2 }
-  ].map(t => ({
-    ...t,
-    scale: spawnerScale,
-    spawnScale: spawnedTraitScale
-  }));
+    { img: yearningImg, x: w1, y: h1 }, { img: courageImg, x: w2, y: h1 },
+    { img: attentiveImg, x: w - w2, y: h1 }, { img: nestledImg, x: w1, y: h2 },
+    { img: anchoringImg, x: w2, y: h2 }, { img: defiantImg, x: w - w2, y: h2 },
+    { img: empatheticImg, x: w - w1, y: h1 }, { img: vulnerableImg, x: w - w1, y: h2 }
+  ].map(t => ({ ...t, targetWidth: spawnerTargetSize, spawnScale: spawnedTraitScale }));
+  spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, { targetWidth: s.targetWidth, spawnScale: s.spawnScale }));
 
-  spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, s.scale, s.spawnScale));
+  // --- Intro Scene Buttons ---
+  playBtnW = width * 0.15;
+  playBtnH = playBtnW / 2.5;
+  playBtnX = width / 2.3 - playBtnW / 2.3;
+  playBtnY = height * 0.72 - playBtnH / 2;
 
-  // --- Main Scene Buttons (Bottom Right) ---
-  // Positioned from right-to-left
-  cookBtnW = largeButtonSize;
-  cookBtnH = largeButtonSize;
-  cookBtnX = width - cookBtnW - edgeMargin1;
-  cookBtnY = height - cookBtnH - edgeMargin1;
+  tutorialBtnW = playBtnW;
+  tutorialBtnH = playBtnH;
+  tutorialBtnX = width / 1.8 - tutorialBtnW / 1.8;
+  tutorialBtnY = height * 0.72 - playBtnH / 2;
 
-  resetBtnW = largeButtonSize;
-  resetBtnH = largeButtonSize;
-  resetBtnX = cookBtnX - resetBtnW - buttonMargin;
+  // --- Tutorial Scene Button ---
+  homeBtnW = playBtnW;
+  homeBtnH = playBtnH;
+  homeBtnX = width / 2 - homeBtnW / 2;
+  homeBtnY = height - homeBtnH - edgeMargin;
+
+  // --- Main Scene Buttons ---
+  cookBtnW = largeButtonSize; cookBtnH = largeButtonSize;
+  cookBtnX = width - cookBtnW - edgeMargin;
+  cookBtnY = height - cookBtnH - edgeMargin;
+
+  resetBtnW = largeButtonSize; resetBtnH = largeButtonSize;
+  resetBtnX = cookBtnX - resetBtnW - largeButtonMargin;
   resetBtnY = cookBtnY;
 
-  trashW = largeButtonSize;
-  trashH = largeButtonSize;
-  trashX = resetBtnX - trashW - buttonMargin;
+  trashW = largeButtonSize; trashH = largeButtonSize;
+  trashX = resetBtnX - trashW - largeButtonMargin;
   trashY = cookBtnY;
   
-  // --- Main Scene Buttons (Bottom Left) ---
   flipHX = edgeMargin;
   flipHY = height - baseButtonSize - edgeMargin;
-  flipVX = flipHX + baseButtonSize + buttonMargin1;
+  flipVX = flipHX + baseButtonSize + baseButtonMargin;
   flipVY = flipHY;
 
-  // --- Cook Scene Buttons (Bottom Right) ---
-  backBtnW = baseButtonSize;
-  backBtnH = baseButtonSize;
+  // --- Cook Scene Buttons ---
+  backBtnW = baseButtonSize; backBtnH = baseButtonSize;
   backBtnX = width - backBtnW - edgeMargin;
   backBtnY = height - backBtnH - edgeMargin;
 
-  screenshotBtnW = baseButtonSize;
-  screenshotBtnH = baseButtonSize;
-  screenshotBtnX = backBtnX - screenshotBtnW - buttonMargin;
+  screenshotBtnW = baseButtonSize; screenshotBtnH = baseButtonSize;
+  screenshotBtnX = backBtnX - screenshotBtnW - baseButtonMargin;
   screenshotBtnY = backBtnY;
-
-  // --- Intro Popup Button ---
-  playBtnW = largeButtonSize;
-  playBtnH = largeButtonSize; // Preserve original aspect ratio
-  playBtnX = width / 2 - playBtnW / 2;
-  playBtnY = height * 0.72 - playBtnH / 2;
 }
 
 function draw() {
-  image(inCookScene ? bgImg2 : bgImg, 0, 0, width, height);
+  switch (currentScene) {
+    case 'intro':
+      image(popupImg, 0, 0, width, height);
+      drawButton(playBtnImg, playBtnX, playBtnY, playBtnW, playBtnH);
+      drawButton(tutorialBtnImg, tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH);
+      break;
 
-  if (showIntro) {
-    image(popupImg, 0, 0, width, height);
-    drawButton(playBtnImg, playBtnX, playBtnY, playBtnW, playBtnH);
-    return;
+    case 'tutorial':
+      image(howtoImg, 0, 0, width, height);
+      drawButton(homeBtnImg, homeBtnX, homeBtnY, homeBtnW, homeBtnH);
+      break;
+
+    case 'main':
+      image(bgImg, 0, 0, width, height);
+      drawButton(trashBtnImg, trashX, trashY, trashW, trashH);
+      drawButton(resetBtnImg, resetBtnX, resetBtnY, resetBtnW, resetBtnH);
+      drawButton(cookBtnImg, cookBtnX, cookBtnY, cookBtnW, cookBtnH);
+      let btnSize = width * 0.055;
+      drawButton(flipHImg, flipHX, flipHY, btnSize, btnSize);
+      drawButton(flipVImg, flipVX, flipVY, btnSize, btnSize);
+      for (let s of spawnerTraits) s.display();
+      for (let t of traits) { t.update(); t.display(); }
+      if (selectedTrait) selectedTrait.drawHandles();
+      break;
+
+    case 'cook':
+      image(bgImg2, 0, 0, width, height);
+      for (let t of traits) { t.update(); t.display(); }
+      if (!takingScreenshot) {
+        drawButton(backBtnImg, backBtnX, backBtnY, backBtnW, backBtnH);
+        drawButton(screenshotBtnImg, screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH);
+      }
+      break;
   }
-
-  player = createVector(mouseX, mouseY);
-
-  if (!inCookScene) {
-    drawButton(trashBtnImg, trashX, trashY, trashW, trashH);
-    drawButton(resetBtnImg, resetBtnX, resetBtnY, resetBtnW, resetBtnH);
-    drawButton(cookBtnImg, cookBtnX, cookBtnY, cookBtnW, cookBtnH);
-
-    let btnSize = width * 0.055;
-    drawButton(flipHImg, flipHX, flipHY, btnSize, btnSize);
-    drawButton(flipVImg, flipVX, flipVY, btnSize, btnSize);
-    for (let s of spawnerTraits) s.display();
-  } else {
-    if (!takingScreenshot) {
-      drawButton(backBtnImg, backBtnX, backBtnY, backBtnW, backBtnH);
-      drawButton(screenshotBtnImg, screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH);
-    }
-  }
-
-  for (let t of traits) t.update();
-  for (let t of traits) t.display();
-
-  if (selectedTrait && !inCookScene) selectedTrait.drawHandles();
 
   if (takingScreenshot) {
     saveCanvas('happy-pride-month', 'png');
@@ -171,76 +171,47 @@ function draw() {
   }
 }
 
-// ==========================================================
-// CORRECTED drawButton FUNCTION TO PREVENT STRETCHING
-// ==========================================================
-function drawButton(img, x, y, w, h) {
-  push();
-
-  // 1. Calculate aspect ratios
-  const imgAspect = img.width / img.height;
-  const containerAspect = w / h;
-  let drawW, drawH;
-
-  // 2. Compare ratios to determine how to fit the image
-  if (imgAspect > containerAspect) {
-    // Image is wider than the container, so constrain by width
-    drawW = w;
-    drawH = w / imgAspect;
-  } else {
-    // Image is taller than or has the same aspect as the container, so constrain by height
-    drawH = h;
-    drawW = h * imgAspect;
-  }
-  
-  // 3. Apply a uniform padding to the correctly-proportioned image
-  const padding = 0.8; // Use 80% of the space, leaving a 10% border on all sides
-  drawW *= padding;
-  drawH *= padding;
-
-  // Check if mouse is over the button's full clickable area
-  if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
-    drawingContext.shadowBlur = 15;
-    drawingContext.shadowColor = color(255, 150, 200);
-  }
-
-  // Draw the perfectly-scaled image in the center of the button area
-  imageMode(CENTER);
-  image(img, x + w / 2, y + h / 2, drawW, drawH);
-  drawingContext.shadowBlur = 0;
-  pop();
+function isMouseOver(x, y, w, h) {
+  return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
 }
 
 function mousePressed() {
-  if (showIntro) {
-    if (mouseX > playBtnX && mouseX < playBtnX + playBtnW && mouseY > playBtnY && mouseY < playBtnY + playBtnH) {
-      showIntro = false;
-    }
-    return;
+  switch (currentScene) {
+    case 'intro':
+      if (isMouseOver(playBtnX, playBtnY, playBtnW, playBtnH)) currentScene = 'main';
+      if (isMouseOver(tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH)) currentScene = 'tutorial';
+      break;
+
+    case 'tutorial':
+      if (isMouseOver(homeBtnX, homeBtnY, homeBtnW, homeBtnH)) currentScene = 'intro';
+      break;
+
+    case 'main':
+      handleMainSceneMousePress();
+      break;
+
+    case 'cook':
+      if (isMouseOver(backBtnX, backBtnY, backBtnW, backBtnH)) currentScene = 'main';
+      if (isMouseOver(screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH)) takingScreenshot = true;
+      break;
   }
+}
 
-  let flipButtonSize = width * 0.055; 
-
-  if (!inCookScene) {
-    if (mouseX > flipHX && mouseX < flipHX + flipButtonSize && mouseY > flipHY && mouseY < flipHY + flipButtonSize) {
-      if (selectedTrait) selectedTrait.flipH *= -1;
-      return;
+function handleMainSceneMousePress() {
+    let flipButtonSize = width * 0.055;
+    if (isMouseOver(flipHX, flipHY, flipButtonSize, flipButtonSize)) {
+      if (selectedTrait) selectedTrait.flipH *= -1; return;
     }
-    if (mouseX > flipVX && mouseX < flipVX + flipButtonSize && mouseY > flipVY && mouseY < flipVY + flipButtonSize) {
-      if (selectedTrait) selectedTrait.flipV *= -1;
-      return;
+    if (isMouseOver(flipVX, flipVY, flipButtonSize, flipButtonSize)) {
+      if (selectedTrait) selectedTrait.flipV *= -1; return;
     }
-    if (mouseX > resetBtnX && mouseX < resetBtnX + resetBtnW && mouseY > resetBtnY && mouseY < resetBtnY + resetBtnH) {
-      traits = [];
-      selectedTrait = null;
-      return;
+    if (isMouseOver(resetBtnX, resetBtnY, resetBtnW, resetBtnH)) {
+      traits = []; selectedTrait = null; return;
     }
-    if (mouseX > cookBtnX && mouseX < cookBtnX + cookBtnW && mouseY > cookBtnY && mouseY < cookBtnY + cookBtnH) {
-      inCookScene = true;
-      selectedTrait = null;
-      return;
+    if (isMouseOver(cookBtnX, cookBtnY, cookBtnW, cookBtnH)) {
+      currentScene = 'cook'; selectedTrait = null; return;
     }
-    if (mouseX > trashX && mouseX < trashX + trashW && mouseY > trashY && mouseY < trashY + trashH) {
+    if (isMouseOver(trashX, trashY, trashW, trashH)) {
       if (selectedTrait) {
         let index = traits.indexOf(selectedTrait);
         if (index > -1) traits.splice(index, 1);
@@ -251,13 +222,9 @@ function mousePressed() {
 
     if (selectedTrait) {
       if (selectedTrait.isOverResizeHandle(mouseX, mouseY)) {
-        resizing = true;
-        selectedTrait.startResizing(mouseX, mouseY);
-        return;
+        resizing = true; selectedTrait.startResizing(mouseX, mouseY); return;
       } else if (selectedTrait.isOverRotateHandle(mouseX, mouseY)) {
-        rotating = true;
-        selectedTrait.startRotating(mouseX, mouseY);
-        return;
+        rotating = true; selectedTrait.startRotating(mouseX, mouseY); return;
       }
     }
 
@@ -281,190 +248,132 @@ function mousePressed() {
     }
 
     if (!clickedAny) selectedTrait = null;
-  } else {
-    if (mouseX > backBtnX && mouseX < backBtnX + backBtnW && mouseY > backBtnY && mouseY < backBtnY + backBtnH) {
-      inCookScene = false;
-      return;
-    }
-    if (mouseX > screenshotBtnX && mouseX < screenshotBtnX + screenshotBtnW && mouseY > screenshotBtnY && mouseY < screenshotBtnY + screenshotBtnH) {
-      takingScreenshot = true;
-      return;
-    }
-  }
 }
 
+
 function mouseDragged() {
-  if (!inCookScene && resizing && selectedTrait) selectedTrait.resize(mouseX, mouseY);
-  if (!inCookScene && rotating && selectedTrait) selectedTrait.rotateTo(mouseX, mouseY);
+  if (currentScene === 'main' && selectedTrait) {
+    if (resizing) selectedTrait.resize(mouseX, mouseY);
+    if (rotating) selectedTrait.rotateTo(mouseX, mouseY);
+  }
 }
 
 function mouseReleased() {
   resizing = false;
   rotating = false;
   for (let t of traits) t.released();
-  newTrait = null;
 }
 
+function drawButton(img, x, y, w, h) {
+  push();
+  const imgAspect = img.width / img.height;
+  const containerAspect = w / h;
+  let drawW, drawH;
+  if (imgAspect > containerAspect) {
+    drawW = w; drawH = w / imgAspect;
+  } else {
+    drawH = h; drawW = h * imgAspect;
+  }
+  const padding = 0.8; 
+  drawW *= padding; drawH *= padding;
+  if (isMouseOver(x, y, w, h)) {
+    drawingContext.shadowBlur = 15;
+    drawingContext.shadowColor = color(255, 150, 200);
+  }
+  imageMode(CENTER);
+  image(img, x + w / 2, y + h / 2, drawW, drawH);
+  drawingContext.shadowBlur = 0;
+  pop();
+}
+
+// ==========================================================
+// Trait CLASS with FIX for Inconsistent Spawner Sizes
+// ==========================================================
 class Trait {
-  constructor(x, y, isTrait, img, scale = 1, spawnScale = 1) {
-    this.x = x;
-    this.y = y;
-    this.img = img;
-    this.scale = scale;
-    this.spawnScale = spawnScale;
-    this.isTrait = isTrait;
+  constructor(x, y, isTrait, img, options = {}) {
+    this.x = x; this.y = y; this.img = img; this.isTrait = isTrait;
+    this.spawnScale = options.spawnScale || 0.3;
 
-    this.rotation = 0;
-    this.flipH = 1;
-    this.flipV = 1;
-    this.dragging = false;
-    this.offsetX = 0;
-    this.offsetY = 0;
+    // --- THIS IS THE FIX ---
+    // Check if we are creating a spawner with a target size.
+    if (options.targetWidth && this.img.width > 0) {
+      // Find the longest side of the image (either width or height).
+      let longestSide = max(this.img.width, this.img.height);
+      
+      // Calculate the scale needed to make that LONGEST side match our target size.
+      // This fits the whole image inside a square bounding box.
+      this.scale = options.targetWidth / longestSide;
 
-    this.initialDistance = 0;
-    this.initialScale = this.scale;
-    this.initialAngle = 0;
-    this.initialRotation = 0;
+    } else if (options.initialScale) {
+      // This is for traits already on the canvas, it works as before.
+      this.scale = options.initialScale;
+    } else {
+      // A fallback default.
+      this.scale = 1;
+    }
+    // --- END OF FIX ---
 
+    this.rotation = 0; this.flipH = 1; this.flipV = 1;
+    this.dragging = false; this.offsetX = 0; this.offsetY = 0;
+    this.initialDistance = 0; this.initialScale = this.scale;
+    this.initialAngle = 0; this.initialRotation = 0;
     this.handleSize = width * 0.01;
-
     this.updateSize();
   }
-
-  updateSize() {
-    this.width = this.img.width * this.scale;
-    this.height = this.img.height * this.scale;
-  }
-
+  updateSize() { this.width = this.img.width * this.scale; this.height = this.img.height * this.scale; }
   display() {
     let hovered = dist(mouseX, mouseY, this.x, this.y) < max(this.width, this.height) / 2;
-
     push();
-    translate(this.x, this.y);
-    rotate(this.rotation);
-    scale(this.flipH, this.flipV);
+    translate(this.x, this.y); rotate(this.rotation); scale(this.flipH, this.flipV);
     imageMode(CENTER);
-
     if (hovered && !this.dragging && selectedTrait !== this) {
-      drawingContext.shadowBlur = 40;
-      drawingContext.shadowColor = color(255, 255, 255);
+      drawingContext.shadowBlur = 40; drawingContext.shadowColor = color(255, 255, 255);
     }
-
-    if (selectedTrait === this && !inCookScene) {
-      drawingContext.shadowBlur = 30;
-      drawingContext.shadowColor = color(255, 255, 255);
+    if (selectedTrait === this && currentScene === 'main') {
+      drawingContext.shadowBlur = 30; drawingContext.shadowColor = color(255, 255, 255);
     }
-
     let sizeMult = hovered ? 1.05 : 1;
     image(this.img, 0, 0, this.width * sizeMult, this.height * sizeMult);
     drawingContext.shadowBlur = 0;
-
-    if (selectedTrait === this && !inCookScene) {
-      noFill();
-      stroke(255);
-      strokeWeight(2);
-      rectMode(CENTER);
+    if (selectedTrait === this && currentScene === 'main') {
+      noFill(); stroke(255); strokeWeight(2); rectMode(CENTER);
       rect(0, 0, this.width + 4, this.height + 4);
     }
-
     pop();
   }
-
-  update() {
-    if (this.dragging) {
-      this.x = mouseX + this.offsetX;
-      this.y = mouseY + this.offsetY;
-    }
-  }
-
+  update() { if (this.dragging) { this.x = mouseX + this.offsetX; this.y = mouseY + this.offsetY; } }
   pressed(mx, my) {
-    let cosA = cos(-this.rotation);
-    let sinA = sin(-this.rotation);
-    let dx = mx - this.x;
-    let dy = my - this.y;
-    let rotatedX = dx * cosA - dy * sinA;
-    let rotatedY = dx * sinA + dy * cosA;
-
+    let cosA = cos(-this.rotation); let sinA = sin(-this.rotation);
+    let dx = mx - this.x; let dy = my - this.y;
+    let rotatedX = dx * cosA - dy * sinA; let rotatedY = dx * sinA + dy * cosA;
     if (abs(rotatedX) < this.width / 2 && abs(rotatedY) < this.height / 2) {
       if (!this.isTrait) {
-        let t = new Trait(width / 2, height / 2, true, this.img, this.spawnScale);
-        traits.push(t);
-        selectedTrait = t;
+        let t = new Trait(width / 2, height / 2, true, this.img, { initialScale: this.spawnScale });
+        traits.push(t); selectedTrait = t;
         selectedTrait.dragging = true;
-        selectedTrait.offsetX = selectedTrait.x - mx;
-        selectedTrait.offsetY = selectedTrait.y - my;
+        selectedTrait.offsetX = selectedTrait.x - mx; selectedTrait.offsetY = selectedTrait.y - my;
         return true;
       } else {
-        this.dragging = true;
-        this.offsetX = this.x - mx;
-        this.offsetY = this.y - my;
+        this.dragging = true; this.offsetX = this.x - mx; this.offsetY = this.y - my;
         selectedTrait = this;
         return true;
       }
     }
     return false;
   }
-
-  released() {
-    this.dragging = false;
-  }
-
-  isOverResizeHandle(mx, my) {
-    let pos = this.getResizeHandlePosition();
-    return dist(mx, my, pos.x, pos.y) < this.handleSize;
-  }
-
-  isOverRotateHandle(mx, my) {
-    let pos = this.getRotateHandlePosition();
-    return dist(mx, my, pos.x, pos.y) < this.handleSize;
-  }
-
+  released() { this.dragging = false; }
+  isOverResizeHandle(mx, my) { let pos = this.getResizeHandlePosition(); return dist(mx, my, pos.x, pos.y) < this.handleSize; }
+  isOverRotateHandle(mx, my) { let pos = this.getRotateHandlePosition(); return dist(mx, my, pos.x, pos.y) < this.handleSize; }
   drawHandles() {
-    let resize = this.getResizeHandlePosition();
-    let rotate = this.getRotateHandlePosition();
-
-    push();
-    fill(255);
-    stroke(0);
-    strokeWeight(1);
-    ellipse(resize.x, resize.y, this.handleSize);
-    ellipse(rotate.x, rotate.y, this.handleSize);
+    let resize = this.getResizeHandlePosition(); let rotate = this.getRotateHandlePosition();
+    push(); fill(255); stroke(0); strokeWeight(1);
+    ellipse(resize.x, resize.y, this.handleSize); ellipse(rotate.x, rotate.y, this.handleSize);
     pop();
   }
-
-  getResizeHandlePosition() {
-    let angle = this.rotation;
-    let x = this.x + cos(angle) * this.width / 2;
-    let y = this.y + sin(angle) * this.width / 2;
-    return createVector(x, y);
-  }
-
-  getRotateHandlePosition() {
-    let angle = this.rotation + PI / 2;
-    let x = this.x + cos(angle) * this.height / 2;
-    let y = this.y + sin(angle) * this.height / 2;
-    return createVector(x, y);
-  }
-
-  startResizing(mx, my) {
-    this.initialDistance = dist(mx, my, this.x, this.y);
-    this.initialScale = this.scale;
-  }
-
-  resize(mx, my) {
-    let newDistance = dist(mx, my, this.x, this.y);
-    let scaleFactor = newDistance / this.initialDistance;
-    this.scale = constrain(this.initialScale * scaleFactor, 0.1, 1.0);
-    this.updateSize();
-  }
-
-  startRotating(mx, my) {
-    this.initialAngle = atan2(my - this.y, mx - this.x);
-    this.initialRotation = this.rotation;
-  }
-
-  rotateTo(mx, my) {
-    let currentAngle = atan2(my - this.y, mx - this.x);
-    this.rotation = this.initialRotation + (currentAngle - this.initialAngle);
-  }
+  getResizeHandlePosition() { let angle = this.rotation; let x = this.x + cos(angle) * this.width / 2; let y = this.y + sin(angle) * this.width / 2; return createVector(x, y); }
+  getRotateHandlePosition() { let angle = this.rotation + PI / 2; let x = this.x + cos(angle) * this.height / 2; let y = this.y + sin(angle) * this.height / 2; return createVector(x, y); }
+  startResizing(mx, my) { this.initialDistance = dist(mx, my, this.x, this.y); this.initialScale = this.scale; }
+  resize(mx, my) { let newDistance = dist(mx, my, this.x, this.y); let scaleFactor = newDistance / this.initialDistance; this.scale = constrain(this.initialScale * scaleFactor, 0.1, 1.0); this.updateSize(); }
+  startRotating(mx, my) { this.initialAngle = atan2(my - this.y, mx - this.x); this.initialRotation = this.rotation; }
+  rotateTo(mx, my) { let currentAngle = atan2(my - this.y, mx - this.x); this.rotation = this.initialRotation + (currentAngle - this.initialAngle); }
 }
