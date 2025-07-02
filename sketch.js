@@ -15,6 +15,13 @@ let screenshotBtnImg, trashBtnImg, resetBtnImg, cookBtnImg, backBtnImg;
 let popupImg, playBtnImg;
 let bgImg, bgImg2;
 
+// --- NEW: Variables for transformation animation ---
+let boomGif;
+let transformationSound;
+let isTransforming = false;
+let transformationStartTime;
+const TRANSFORMATION_DURATION = 1500; // Duration in milliseconds (1.5 seconds)
+
 // --- Button dimension variables ---
 let flipHX, flipHY, flipVX, flipVY;
 let trashX, trashY, trashW, trashH;
@@ -57,6 +64,10 @@ function preload() {
   tutorialBtnImg = loadImage('buttons/tutorial.png');
   howtoImg = loadImage('buttons/howto.png');
   homeBtnImg = loadImage('buttons/home.png');
+  
+  boomGif = loadImage('buttons/boom.gif');
+  soundFormats('mp3');
+  transformationSound = loadSound('transformation.mp3');
 }
 
 function setup() {
@@ -74,7 +85,6 @@ function setup() {
   let edgeMargin1 = width * 0.025;
   let largeButtonMargin = width * 0.005; 
   let baseButtonMargin = width * 0.000000000000001;
-  // --- NEW: A larger margin to separate groups of buttons ---
   let buttonGroupMargin = width * 0.06; 
 
   let spawnerTargetSize = width * 0.11; 
@@ -111,20 +121,17 @@ function setup() {
   trashW = largeButtonSize; trashH = largeButtonSize;
   trashX = resetBtnX - trashW - largeButtonMargin; trashY = cookBtnY;
   
-  // --- MODIFIED: Main Scene Buttons (Bottom Left) ---
-  // 1. Position the new back button on the far left.
+  // --- Main Scene Buttons (Bottom Left) ---
   mainBackBtnW = baseButtonSize;
   mainBackBtnH = baseButtonSize;
   mainBackBtnX = edgeMargin;
   mainBackBtnY = height - mainBackBtnH - edgeMargin;
-
-  // 2. Position the flip buttons to the right of the back button, using the new group margin.
   flipHX = mainBackBtnX + mainBackBtnW + buttonGroupMargin;
   flipHY = mainBackBtnY;
   flipVX = flipHX + baseButtonSize + baseButtonMargin;
   flipVY = flipHY;
 
-  // --- Cook Scene Buttons (un-changed) ---
+  // --- Cook Scene Buttons ---
   backBtnW = baseButtonSize; backBtnH = baseButtonSize;
   backBtnX = width - backBtnW - edgeMargin1;
   backBtnY = height - backBtnH - edgeMargin1;
@@ -134,6 +141,7 @@ function setup() {
 }
 
 function draw() {
+  // This switch statement draws the current scene's background and elements
   switch (currentScene) {
     case 'intro':
       image(popupImg, 0, 0, width, height);
@@ -143,24 +151,18 @@ function draw() {
 
     case 'tutorial':
       image(howtoImg, 0, 0, width, height);
-      drawButton(homeBtnImg, homeBtnX, homeBtnY, homeBtnW, homeBtnH);
+      drawButton(playBtnImg, homeBtnX, homeBtnY, homeBtnW, homeBtnH);
       break;
 
     case 'main':
       image(bgImg, 0, 0, width, height);
-      // Draw buttons from right to left
       drawButton(trashBtnImg, trashX, trashY, trashW, trashH);
       drawButton(resetBtnImg, resetBtnX, resetBtnY, resetBtnW, resetBtnH);
       drawButton(cookBtnImg, cookBtnX, cookBtnY, cookBtnW, cookBtnH);
-      
-      // Draw buttons from left to right
-      // --- NEW: Draw the main scene's back button ---
       drawButton(backBtnImg, mainBackBtnX, mainBackBtnY, mainBackBtnW, mainBackBtnH);
-
       let btnSize = width * 0.055;
       drawButton(flipHImg, flipHX, flipHY, btnSize, btnSize);
       drawButton(flipVImg, flipVX, flipVY, btnSize, btnSize);
-      
       for (let s of spawnerTraits) s.display();
       for (let t of traits) { t.update(); t.display(); }
       if (selectedTrait) selectedTrait.drawHandles();
@@ -169,11 +171,33 @@ function draw() {
     case 'cook':
       image(bgImg2, 0, 0, width, height);
       for (let t of traits) { t.update(); t.display(); }
-      if (!takingScreenshot) {
+      if (!takingScreenshot && !isTransforming) { // Also hide buttons during animation
         drawButton(backBtnImg, backBtnX, backBtnY, backBtnW, backBtnH);
         drawButton(screenshotBtnImg, screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH);
       }
       break;
+  }
+  
+  // --- Handle the transformation animation overlay ---
+  if (isTransforming) {
+    let elapsedTime = millis() - transformationStartTime;
+    
+    if (elapsedTime > TRANSFORMATION_DURATION) {
+      isTransforming = false; 
+    } else {
+      // --- MODIFIED SECTION: FADE-OUT LOGIC ---
+      push();
+      
+      // Calculate the alpha (transparency). It will go from 255 (opaque) down to 0 (invisible).
+      let fadeAlpha = map(elapsedTime, 0, TRANSFORMATION_DURATION, 255, 0);
+      
+      // Apply the transparency before drawing the image
+      tint(255, fadeAlpha);
+      
+      imageMode(CENTER);
+      image(boomGif, width / 2, height / 2, width, height); 
+      pop(); // pop() resets the tint so it doesn't affect anything else
+    }
   }
 
   if (takingScreenshot) {
@@ -187,13 +211,19 @@ function isMouseOver(x, y, w, h) {
 }
 
 function mousePressed() {
+  if (currentScene === 'intro' || currentScene === 'tutorial') {
+    userStartAudio();
+  }
+
+  if (isTransforming) return;
+
   switch (currentScene) {
     case 'intro':
       if (isMouseOver(playBtnX, playBtnY, playBtnW, playBtnH)) currentScene = 'main';
       if (isMouseOver(tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH)) currentScene = 'tutorial';
       break;
     case 'tutorial':
-      if (isMouseOver(homeBtnX, homeBtnY, homeBtnW, homeBtnH)) currentScene = 'intro';
+      if (isMouseOver(homeBtnX, homeBtnY, homeBtnW, homeBtnH)) currentScene = 'main';
       break;
     case 'main':
       handleMainSceneMousePress();
@@ -206,12 +236,11 @@ function mousePressed() {
 }
 
 function handleMainSceneMousePress() {
-    // --- NEW: Check for main scene back button press first ---
     if (isMouseOver(mainBackBtnX, mainBackBtnY, mainBackBtnW, mainBackBtnH)) {
       currentScene = 'intro';
-      traits = []; // Reset the canvas by clearing traits
+      traits = []; 
       selectedTrait = null;
-      return; // Exit
+      return;
     }
 
     let flipButtonSize = width * 0.055;
@@ -224,9 +253,16 @@ function handleMainSceneMousePress() {
     if (isMouseOver(resetBtnX, resetBtnY, resetBtnW, resetBtnH)) {
       traits = []; selectedTrait = null; return;
     }
+
     if (isMouseOver(cookBtnX, cookBtnY, cookBtnW, cookBtnH)) {
-      currentScene = 'cook'; selectedTrait = null; return;
+      currentScene = 'cook';
+      isTransforming = true;
+      transformationStartTime = millis();
+      transformationSound.play();
+      selectedTrait = null;               
+      return; 
     }
+    
     if (isMouseOver(trashX, trashY, trashW, trashH)) {
       if (selectedTrait) {
         let index = traits.indexOf(selectedTrait);
@@ -267,6 +303,7 @@ function handleMainSceneMousePress() {
 }
 
 function mouseDragged() {
+  if (isTransforming) return;
   if (currentScene === 'main' && selectedTrait) {
     if (resizing) selectedTrait.resize(mouseX, mouseY);
     if (rotating) selectedTrait.rotateTo(mouseX, mouseY);
@@ -291,7 +328,7 @@ function drawButton(img, x, y, w, h) {
   }
   const padding = 0.8; 
   drawW *= padding; drawH *= padding;
-  if (isMouseOver(x, y, w, h)) {
+  if (isMouseOver(x, y, w, h) && !isTransforming) {
     drawingContext.shadowBlur = 15;
     drawingContext.shadowColor = color(255, 150, 200);
   }
