@@ -61,15 +61,16 @@ function setup() {
 
   // --- RESPONSIVE UI CALCULATIONS ---
   // Define base sizes and margins as a percentage of the canvas width
-  let baseButtonSize = width * 0.075; // A good base size for most buttons
+  let baseButtonSize = width * 0.055; // A good base size for most buttons
   let largeButtonSize = width * 0.075; // For the main action buttons
   let edgeMargin = width * 0.015;      // Margin from the edge of the canvas
+  let edgeMargin1 = width * 0.01;  
   let buttonMargin = width * 0.0005;   // Margin between buttons
   let buttonMargin1 = width * 0.00001;
 
   // --- Trait Spawners ---
-  let spawnerScale = 0.08;
-  let spawnedTraitScale = 0.3; // This is the "30%" scale for new traits
+  let spawnerScale = width * 0.0001;
+  let spawnedTraitScale = 0.2; // This is the "30%" scale for new traits
 
   // Spawner positions are already nicely responsive!
   const w1 = 0.09 * w, w2 = 0.172185430 * w;
@@ -95,8 +96,8 @@ function setup() {
   // Positioned from right-to-left
   cookBtnW = largeButtonSize;
   cookBtnH = largeButtonSize;
-  cookBtnX = width - cookBtnW - edgeMargin;
-  cookBtnY = height - cookBtnH - edgeMargin;
+  cookBtnX = width - cookBtnW - edgeMargin1;
+  cookBtnY = height - cookBtnH - edgeMargin1;
 
   resetBtnW = largeButtonSize;
   resetBtnH = largeButtonSize;
@@ -126,10 +127,10 @@ function setup() {
   screenshotBtnY = backBtnY;
 
   // --- Intro Popup Button ---
-  playBtnW = width * 0.12;
-  playBtnH = playBtnW / 2.5; // Preserve original aspect ratio
+  playBtnW = largeButtonSize;
+  playBtnH = largeButtonSize; // Preserve original aspect ratio
   playBtnX = width / 2 - playBtnW / 2;
-  playBtnY = height * 0.75 - playBtnH / 2;
+  playBtnY = height * 0.72 - playBtnH / 2;
 }
 
 function draw() {
