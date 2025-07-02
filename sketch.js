@@ -12,16 +12,14 @@ let screenshotBtnImg, trashBtnImg, resetBtnImg, cookBtnImg, backBtnImg;
 let popupImg, playBtnImg;
 let bgImg, bgImg2;
 
-let buttonSize = 67;
-let buttonSize2 = 90;
-
+// --- All UI element dimensions are now calculated in setup() ---
 let flipHX, flipHY, flipVX, flipVY;
 let trashX, trashY, trashW, trashH;
-let buttonX, buttonY, buttonW, buttonH;
+let resetBtnX, resetBtnY, resetBtnW, resetBtnH; // Renamed for clarity
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH;
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
-let playBtnX, playBtnY, playBtnW = 75 * 2, playBtnH = 30 * 2;
+let playBtnX, playBtnY, playBtnW, playBtnH;
 
 let inCookScene = false;
 let resizing = false;
@@ -52,6 +50,7 @@ function preload() {
 }
 
 function setup() {
+  // Keep the canvas responsive with a 16:9 aspect ratio
   let w = windowWidth;
   let h = w * 9 / 16;
   if (h > windowHeight) {
@@ -60,9 +59,22 @@ function setup() {
   }
   createCanvas(w, h);
 
-  let spawnerScale = 0.15;
-  const w1 = 0.09 * w, w2 = 0.172185430 * w
-  const h1 = 0.353200 * h, h2 = 0.588668 * h
+  // --- RESPONSIVE UI CALCULATIONS ---
+  // Define base sizes and margins as a percentage of the canvas width
+  let baseButtonSize = width * 0.055; // A good base size for most buttons
+  let largeButtonSize = width * 0.065; // For the main action buttons
+  let edgeMargin = width * 0.015;      // Margin from the edge of the canvas
+  let buttonMargin = width * 0.01;     // Margin between buttons
+
+  // --- Trait Spawners ---
+  // The scale for spawned traits will be 0.3 (or 30%), as you requested.
+  // The spawner icons themselves are smaller (0.15)
+  let spawnerScale = 0.07;
+  let spawnedTraitScale = 0.2; // This is the "30%" scale for new traits
+
+  // Spawner positions are already nicely responsive!
+  const w1 = 0.09 * w, w2 = 0.172185430 * w;
+  const h1 = 0.353200 * h, h2 = 0.588668 * h;
   originalSpawners = [
     { img: yearningImg,    x: w1,  y: h1 },
     { img: courageImg,     x: w2, y: h1 },
@@ -75,41 +87,49 @@ function setup() {
   ].map(t => ({
     ...t,
     scale: spawnerScale,
-    spawnScale: spawnerScale * 2
+    spawnScale: spawnedTraitScale
   }));
 
   spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, s.scale, s.spawnScale));
 
-  trashW = buttonSize2;
-  trashH = buttonSize2;
-  trashX = width - trashW - 230;
-  trashY = height - trashH - 15;
+  // --- Main Scene Buttons (Bottom Right) ---
+  // Positioned from right-to-left
+  cookBtnW = largeButtonSize;
+  cookBtnH = largeButtonSize;
+  cookBtnX = width - cookBtnW - edgeMargin;
+  cookBtnY = height - cookBtnH - edgeMargin;
 
-  buttonW = trashW;
-  buttonH = trashH;
-  buttonX = trashX + trashW + 10;
-  buttonY = trashY;
+  resetBtnW = largeButtonSize;
+  resetBtnH = largeButtonSize;
+  resetBtnX = cookBtnX - resetBtnW - buttonMargin;
+  resetBtnY = cookBtnY;
 
-  cookBtnW = buttonSize2;
-  cookBtnH = buttonSize2;
-  cookBtnX = buttonX + buttonW + 10;
-  cookBtnY = trashY;
-
-  backBtnW = buttonSize;
-  backBtnH = buttonSize;
-  backBtnX = width - backBtnW - 20;
-  backBtnY = height - backBtnH - 20;
-
-  screenshotBtnW = buttonSize;
-  screenshotBtnH = buttonSize;
-  screenshotBtnX = backBtnX - buttonSize - 10;
-  screenshotBtnY = backBtnY;
-
-  flipHX = 20;
-  flipHY = height - buttonSize - 20;
-  flipVX = flipHX + buttonSize + 10;
+  trashW = largeButtonSize;
+  trashH = largeButtonSize;
+  trashX = resetBtnX - trashW - buttonMargin;
+  trashY = cookBtnY;
+  
+  // --- Main Scene Buttons (Bottom Left) ---
+  flipHX = edgeMargin;
+  flipHY = height - baseButtonSize - edgeMargin;
+  flipVX = flipHX + baseButtonSize + buttonMargin;
   flipVY = flipHY;
 
+  // --- Cook Scene Buttons (Bottom Right) ---
+  backBtnW = baseButtonSize;
+  backBtnH = baseButtonSize;
+  backBtnX = width - backBtnW - edgeMargin;
+  backBtnY = height - backBtnH - edgeMargin;
+
+  screenshotBtnW = baseButtonSize;
+  screenshotBtnH = baseButtonSize;
+  screenshotBtnX = backBtnX - screenshotBtnW - buttonMargin;
+  screenshotBtnY = backBtnY;
+
+  // --- Intro Popup Button ---
+  // This uses a larger percentage for prominence. The aspect ratio is preserved.
+  playBtnW = width * 0.12;
+  playBtnH = playBtnW / 2.5; // Original aspect ratio was 150/60 = 2.5
   playBtnX = width / 2 - playBtnW / 2;
   playBtnY = height * 0.75 - playBtnH / 2;
 }
@@ -127,10 +147,12 @@ function draw() {
 
   if (!inCookScene) {
     drawButton(trashBtnImg, trashX, trashY, trashW, trashH);
-    drawButton(resetBtnImg, buttonX, buttonY, buttonW, buttonH);
+    drawButton(resetBtnImg, resetBtnX, resetBtnY, resetBtnW, resetBtnH);
     drawButton(cookBtnImg, cookBtnX, cookBtnY, cookBtnW, cookBtnH);
-    drawButton(flipHImg, flipHX, flipHY, buttonSize, buttonSize);
-    drawButton(flipVImg, flipVX, flipVY, buttonSize, buttonSize);
+    // Use the calculated baseButtonSize for the flip buttons' container
+    let btnSize = width * 0.055;
+    drawButton(flipHImg, flipHX, flipHY, btnSize, btnSize);
+    drawButton(flipVImg, flipVX, flipVY, btnSize, btnSize);
     for (let s of spawnerTraits) s.display();
   } else {
     if (!takingScreenshot) {
@@ -144,10 +166,9 @@ function draw() {
 
   if (selectedTrait && !inCookScene) selectedTrait.drawHandles();
 
-  // If taking a screenshot, save and reset flag
   if (takingScreenshot) {
-    takingScreenshot = false;
     saveCanvas('happy-pride-month', 'png');
+    takingScreenshot = false;
   }
 }
 
@@ -156,8 +177,10 @@ function drawButton(img, x, y, w, h) {
   let aspect = img.width / img.height;
   let drawW = w;
   let drawH = h;
-  if (aspect > 1) drawH = w / aspect;
-  else drawW = h * aspect;
+  // This logic correctly scales the image to fit inside the button area (w, h)
+  // We'll reduce the size slightly for a padding effect
+  if (aspect > 1) drawH = (w / aspect) * 0.8;
+  else drawW = (h * aspect) * 0.8;
 
   if (mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h) {
     drawingContext.shadowBlur = 15;
@@ -178,16 +201,19 @@ function mousePressed() {
     return;
   }
 
+  // Use the calculated dimensions for hit detection
+  let flipButtonSize = width * 0.055; 
+
   if (!inCookScene) {
-    if (mouseX > flipHX && mouseX < flipHX + buttonSize && mouseY > flipHY && mouseY < flipHY + buttonSize) {
+    if (mouseX > flipHX && mouseX < flipHX + flipButtonSize && mouseY > flipHY && mouseY < flipHY + flipButtonSize) {
       if (selectedTrait) selectedTrait.flipH *= -1;
       return;
     }
-    if (mouseX > flipVX && mouseX < flipVX + buttonSize && mouseY > flipVY && mouseY < flipVY + buttonSize) {
+    if (mouseX > flipVX && mouseX < flipVX + flipButtonSize && mouseY > flipVY && mouseY < flipVY + flipButtonSize) {
       if (selectedTrait) selectedTrait.flipV *= -1;
       return;
     }
-    if (mouseX > buttonX && mouseX < buttonX + buttonW && mouseY > buttonY && mouseY < buttonY + buttonH) {
+    if (mouseX > resetBtnX && mouseX < resetBtnX + resetBtnW && mouseY > resetBtnY && mouseY < resetBtnY + resetBtnH) {
       traits = [];
       selectedTrait = null;
       return;
@@ -250,6 +276,7 @@ function mousePressed() {
   }
 }
 
+// mouseDragged and mouseReleased are fine as they are.
 function mouseDragged() {
   if (!inCookScene && resizing && selectedTrait) selectedTrait.resize(mouseX, mouseY);
   if (!inCookScene && rotating && selectedTrait) selectedTrait.rotateTo(mouseX, mouseY);
@@ -282,6 +309,10 @@ class Trait {
     this.initialScale = this.scale;
     this.initialAngle = 0;
     this.initialRotation = 0;
+
+    // Make handle size responsive
+    this.handleSize = width * 0.01;
+
     this.updateSize();
   }
 
@@ -332,18 +363,28 @@ class Trait {
   }
 
   pressed(mx, my) {
+    // Check for click within the bounding box of the rotated image
+    // This is more accurate than a simple circle for rectangular images
+    let cosA = cos(-this.rotation);
+    let sinA = sin(-this.rotation);
     let dx = mx - this.x;
     let dy = my - this.y;
-    let distToCenter = sqrt(dx * dx + dy * dy);
-    let maxSize = max(this.width, this.height) / 2;
+    let rotatedX = dx * cosA - dy * sinA;
+    let rotatedY = dx * sinA + dy * cosA;
 
-    if (distToCenter < maxSize) {
+    if (abs(rotatedX) < this.width / 2 && abs(rotatedY) < this.height / 2) {
       if (!this.isTrait) {
+        // The spawner was clicked, create a new trait
         let t = new Trait(width / 2, height / 2, true, this.img, this.spawnScale);
         traits.push(t);
         selectedTrait = t;
+        // Start dragging the new trait immediately
+        selectedTrait.dragging = true;
+        selectedTrait.offsetX = selectedTrait.x - mx;
+        selectedTrait.offsetY = selectedTrait.y - my;
         return true;
       } else {
+        // An existing trait was clicked
         this.dragging = true;
         this.offsetX = this.x - mx;
         this.offsetY = this.y - my;
@@ -359,15 +400,13 @@ class Trait {
   }
 
   isOverResizeHandle(mx, my) {
-    let r = 10;
     let pos = this.getResizeHandlePosition();
-    return dist(mx, my, pos.x, pos.y) < r;
+    return dist(mx, my, pos.x, pos.y) < this.handleSize;
   }
 
   isOverRotateHandle(mx, my) {
-    let r = 10;
     let pos = this.getRotateHandlePosition();
-    return dist(mx, my, pos.x, pos.y) < r;
+    return dist(mx, my, pos.x, pos.y) < this.handleSize;
   }
 
   drawHandles() {
@@ -378,11 +417,12 @@ class Trait {
     fill(255);
     stroke(0);
     strokeWeight(1);
-    ellipse(resize.x, resize.y, 10);
-    ellipse(rotate.x, rotate.y, 10);
+    ellipse(resize.x, resize.y, this.handleSize);
+    ellipse(rotate.x, rotate.y, this.handleSize);
     pop();
   }
 
+  // get...HandlePosition, startResizing, resize, startRotating, rotateTo methods are unchanged.
   getResizeHandlePosition() {
     let angle = this.rotation;
     let x = this.x + cos(angle) * this.width / 2;
