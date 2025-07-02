@@ -29,7 +29,7 @@ let resetBtnX, resetBtnY, resetBtnW, resetBtnH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH; // This is for the 'cook' scene
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
-let playBtnX, playBtnY, playBtnW, playBtnH;
+let playBtnW, playBtnH; // Note: playBtnX and playBtnY removed
 let tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH;
 let homeBtnX, homeBtnY, homeBtnW, homeBtnH;
 
@@ -61,7 +61,7 @@ function preload() {
   popupImg = loadImage('buttons/popup.png');
   playBtnImg = loadImage('buttons/play.png');
 
-  tutorialBtnImg = loadImage('buttons/tutorial.png');
+  tutorialBtnImg = loadImage('buttons/start.png');
   howtoImg = loadImage('buttons/howto.png');
   homeBtnImg = loadImage('buttons/home.png');
   
@@ -100,13 +100,12 @@ function setup() {
   ].map(t => ({ ...t, targetWidth: spawnerTargetSize, spawnScale: spawnedTraitScale }));
   spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, { targetWidth: s.targetWidth, spawnScale: s.spawnScale }));
 
-  // --- Intro Scene Buttons ---
-  playBtnW = width * 0.15; playBtnH = playBtnW / 2.5;
-  playBtnX = width / 2.3 - playBtnW / 2.3;
-  playBtnY = height * 0.72 - playBtnH / 2;
+  // --- Intro Scene Button ---
+  playBtnW = width * 0.15; playBtnH = playBtnW / 2.5; // Shared dimensions
   tutorialBtnW = playBtnW; tutorialBtnH = playBtnH;
-  tutorialBtnX = width / 1.8 - tutorialBtnW / 1.8;
-  tutorialBtnY = height * 0.72 - playBtnH / 2;
+  // MODIFIED: Center the tutorial button on the X-axis
+  tutorialBtnX = width / 2 - tutorialBtnW / 2; 
+  tutorialBtnY = height * 0.72 - tutorialBtnH / 2;
 
   // --- Tutorial Scene Button ---
   homeBtnW = playBtnW; homeBtnH = playBtnH;
@@ -145,12 +144,13 @@ function draw() {
   switch (currentScene) {
     case 'intro':
       image(popupImg, 0, 0, width, height);
-      drawButton(playBtnImg, playBtnX, playBtnY, playBtnW, playBtnH);
+      // MODIFIED: The play button is no longer drawn here.
       drawButton(tutorialBtnImg, tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH);
       break;
 
     case 'tutorial':
       image(howtoImg, 0, 0, width, height);
+      // This button now takes the user to the main scene.
       drawButton(playBtnImg, homeBtnX, homeBtnY, homeBtnW, homeBtnH);
       break;
 
@@ -185,18 +185,12 @@ function draw() {
     if (elapsedTime > TRANSFORMATION_DURATION) {
       isTransforming = false; 
     } else {
-      // --- MODIFIED SECTION: FADE-OUT LOGIC ---
       push();
-      
-      // Calculate the alpha (transparency). It will go from 255 (opaque) down to 0 (invisible).
       let fadeAlpha = map(elapsedTime, 0, TRANSFORMATION_DURATION, 255, 0);
-      
-      // Apply the transparency before drawing the image
       tint(255, fadeAlpha);
-      
       imageMode(CENTER);
       image(boomGif, width / 2, height / 2, width, height); 
-      pop(); // pop() resets the tint so it doesn't affect anything else
+      pop();
     }
   }
 
@@ -219,7 +213,7 @@ function mousePressed() {
 
   switch (currentScene) {
     case 'intro':
-      if (isMouseOver(playBtnX, playBtnY, playBtnW, playBtnH)) currentScene = 'main';
+      // MODIFIED: Removed the click handler for the play button.
       if (isMouseOver(tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH)) currentScene = 'tutorial';
       break;
     case 'tutorial':
