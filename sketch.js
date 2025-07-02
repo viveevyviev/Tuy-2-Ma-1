@@ -15,15 +15,19 @@ let screenshotBtnImg, trashBtnImg, resetBtnImg, cookBtnImg, backBtnImg;
 let popupImg, playBtnImg;
 let bgImg, bgImg2;
 
+// --- Button dimension variables ---
 let flipHX, flipHY, flipVX, flipVY;
 let trashX, trashY, trashW, trashH;
 let resetBtnX, resetBtnY, resetBtnW, resetBtnH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
-let backBtnX, backBtnY, backBtnW, backBtnH;
+let backBtnX, backBtnY, backBtnW, backBtnH; // This is for the 'cook' scene
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
 let playBtnX, playBtnY, playBtnW, playBtnH;
 let tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH;
 let homeBtnX, homeBtnY, homeBtnW, homeBtnH;
+
+// --- NEW: Variables for the back button specifically in the 'main' scene ---
+let mainBackBtnX, mainBackBtnY, mainBackBtnW, mainBackBtnH;
 
 let resizing = false;
 let rotating = false;
@@ -66,10 +70,12 @@ function setup() {
 
   let baseButtonSize = width * 0.055;
   let largeButtonSize = width * 0.075;
-  let edgeMargin = width * 0.015;
+  let edgeMargin = width * 0.03;
+  let edgeMargin1 = width * 0.025;
   let largeButtonMargin = width * 0.005; 
-  let baseButtonMargin = width * 0.01;
-  let verticalMargin = height * 0.02;
+  let baseButtonMargin = width * 0.000000000000001;
+  // --- NEW: A larger margin to separate groups of buttons ---
+  let buttonGroupMargin = width * 0.06; 
 
   let spawnerTargetSize = width * 0.11; 
   let spawnedTraitScale = 0.2; 
@@ -85,45 +91,43 @@ function setup() {
   spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, { targetWidth: s.targetWidth, spawnScale: s.spawnScale }));
 
   // --- Intro Scene Buttons ---
-  playBtnW = width * 0.15;
-  playBtnH = playBtnW / 2.5;
+  playBtnW = width * 0.15; playBtnH = playBtnW / 2.5;
   playBtnX = width / 2.3 - playBtnW / 2.3;
   playBtnY = height * 0.72 - playBtnH / 2;
-
-  tutorialBtnW = playBtnW;
-  tutorialBtnH = playBtnH;
+  tutorialBtnW = playBtnW; tutorialBtnH = playBtnH;
   tutorialBtnX = width / 1.8 - tutorialBtnW / 1.8;
   tutorialBtnY = height * 0.72 - playBtnH / 2;
 
   // --- Tutorial Scene Button ---
-  homeBtnW = playBtnW;
-  homeBtnH = playBtnH;
+  homeBtnW = playBtnW; homeBtnH = playBtnH;
   homeBtnX = width / 2 - homeBtnW / 2;
   homeBtnY = height - homeBtnH - edgeMargin;
 
-  // --- Main Scene Buttons ---
+  // --- Main Scene Buttons (Bottom Right) ---
   cookBtnW = largeButtonSize; cookBtnH = largeButtonSize;
-  cookBtnX = width - cookBtnW - edgeMargin;
-  cookBtnY = height - cookBtnH - edgeMargin;
-
+  cookBtnX = width - cookBtnW - edgeMargin1; cookBtnY = height - cookBtnH - edgeMargin1;
   resetBtnW = largeButtonSize; resetBtnH = largeButtonSize;
-  resetBtnX = cookBtnX - resetBtnW - largeButtonMargin;
-  resetBtnY = cookBtnY;
-
+  resetBtnX = cookBtnX - resetBtnW - largeButtonMargin; resetBtnY = cookBtnY;
   trashW = largeButtonSize; trashH = largeButtonSize;
-  trashX = resetBtnX - trashW - largeButtonMargin;
-  trashY = cookBtnY;
+  trashX = resetBtnX - trashW - largeButtonMargin; trashY = cookBtnY;
   
-  flipHX = edgeMargin;
-  flipHY = height - baseButtonSize - edgeMargin;
+  // --- MODIFIED: Main Scene Buttons (Bottom Left) ---
+  // 1. Position the new back button on the far left.
+  mainBackBtnW = baseButtonSize;
+  mainBackBtnH = baseButtonSize;
+  mainBackBtnX = edgeMargin;
+  mainBackBtnY = height - mainBackBtnH - edgeMargin;
+
+  // 2. Position the flip buttons to the right of the back button, using the new group margin.
+  flipHX = mainBackBtnX + mainBackBtnW + buttonGroupMargin;
+  flipHY = mainBackBtnY;
   flipVX = flipHX + baseButtonSize + baseButtonMargin;
   flipVY = flipHY;
 
-  // --- Cook Scene Buttons ---
+  // --- Cook Scene Buttons (un-changed) ---
   backBtnW = baseButtonSize; backBtnH = baseButtonSize;
-  backBtnX = width - backBtnW - edgeMargin;
-  backBtnY = height - backBtnH - edgeMargin;
-
+  backBtnX = width - backBtnW - edgeMargin1;
+  backBtnY = height - backBtnH - edgeMargin1;
   screenshotBtnW = baseButtonSize; screenshotBtnH = baseButtonSize;
   screenshotBtnX = backBtnX - screenshotBtnW - baseButtonMargin;
   screenshotBtnY = backBtnY;
@@ -144,12 +148,19 @@ function draw() {
 
     case 'main':
       image(bgImg, 0, 0, width, height);
+      // Draw buttons from right to left
       drawButton(trashBtnImg, trashX, trashY, trashW, trashH);
       drawButton(resetBtnImg, resetBtnX, resetBtnY, resetBtnW, resetBtnH);
       drawButton(cookBtnImg, cookBtnX, cookBtnY, cookBtnW, cookBtnH);
+      
+      // Draw buttons from left to right
+      // --- NEW: Draw the main scene's back button ---
+      drawButton(backBtnImg, mainBackBtnX, mainBackBtnY, mainBackBtnW, mainBackBtnH);
+
       let btnSize = width * 0.055;
       drawButton(flipHImg, flipHX, flipHY, btnSize, btnSize);
       drawButton(flipVImg, flipVX, flipVY, btnSize, btnSize);
+      
       for (let s of spawnerTraits) s.display();
       for (let t of traits) { t.update(); t.display(); }
       if (selectedTrait) selectedTrait.drawHandles();
@@ -181,15 +192,12 @@ function mousePressed() {
       if (isMouseOver(playBtnX, playBtnY, playBtnW, playBtnH)) currentScene = 'main';
       if (isMouseOver(tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH)) currentScene = 'tutorial';
       break;
-
     case 'tutorial':
       if (isMouseOver(homeBtnX, homeBtnY, homeBtnW, homeBtnH)) currentScene = 'intro';
       break;
-
     case 'main':
       handleMainSceneMousePress();
       break;
-
     case 'cook':
       if (isMouseOver(backBtnX, backBtnY, backBtnW, backBtnH)) currentScene = 'main';
       if (isMouseOver(screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH)) takingScreenshot = true;
@@ -198,6 +206,14 @@ function mousePressed() {
 }
 
 function handleMainSceneMousePress() {
+    // --- NEW: Check for main scene back button press first ---
+    if (isMouseOver(mainBackBtnX, mainBackBtnY, mainBackBtnW, mainBackBtnH)) {
+      currentScene = 'intro';
+      traits = []; // Reset the canvas by clearing traits
+      selectedTrait = null;
+      return; // Exit
+    }
+
     let flipButtonSize = width * 0.055;
     if (isMouseOver(flipHX, flipHY, flipButtonSize, flipButtonSize)) {
       if (selectedTrait) selectedTrait.flipH *= -1; return;
@@ -250,7 +266,6 @@ function handleMainSceneMousePress() {
     if (!clickedAny) selectedTrait = null;
 }
 
-
 function mouseDragged() {
   if (currentScene === 'main' && selectedTrait) {
     if (resizing) selectedTrait.resize(mouseX, mouseY);
@@ -286,33 +301,18 @@ function drawButton(img, x, y, w, h) {
   pop();
 }
 
-// ==========================================================
-// Trait CLASS with FIX for Inconsistent Spawner Sizes
-// ==========================================================
 class Trait {
   constructor(x, y, isTrait, img, options = {}) {
     this.x = x; this.y = y; this.img = img; this.isTrait = isTrait;
     this.spawnScale = options.spawnScale || 0.3;
-
-    // --- THIS IS THE FIX ---
-    // Check if we are creating a spawner with a target size.
     if (options.targetWidth && this.img.width > 0) {
-      // Find the longest side of the image (either width or height).
       let longestSide = max(this.img.width, this.img.height);
-      
-      // Calculate the scale needed to make that LONGEST side match our target size.
-      // This fits the whole image inside a square bounding box.
       this.scale = options.targetWidth / longestSide;
-
     } else if (options.initialScale) {
-      // This is for traits already on the canvas, it works as before.
       this.scale = options.initialScale;
     } else {
-      // A fallback default.
       this.scale = 1;
     }
-    // --- END OF FIX ---
-
     this.rotation = 0; this.flipH = 1; this.flipV = 1;
     this.dragging = false; this.offsetX = 0; this.offsetY = 0;
     this.initialDistance = 0; this.initialScale = this.scale;
