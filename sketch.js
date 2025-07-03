@@ -379,13 +379,20 @@ class Trait {
     let rotatedX = dx * cosA - dy * sinA; let rotatedY = dx * sinA + dy * cosA;
     if (abs(rotatedX) < this.width / 2 && abs(rotatedY) < this.height / 2) {
       if (!this.isTrait) {
-        let t = new Trait(width / 2, height / 2, true, this.img, { initialScale: this.spawnScale });
-        traits.push(t); selectedTrait = t;
+        // --- CHANGE HIGHLIGHTED HERE ---
+        // 1. Create the new trait directly at the mouse position (mx, my)
+        let t = new Trait(mx, my, true, this.img, { initialScale: this.spawnScale });
+        traits.push(t);
+        selectedTrait = t;
         selectedTrait.dragging = true;
-        selectedTrait.offsetX = selectedTrait.x - mx; selectedTrait.offsetY = selectedTrait.y - my;
+        // 2. Set the offset to 0, because the trait's center is already at the mouse.
+        selectedTrait.offsetX = 0;
+        selectedTrait.offsetY = 0;
         return true;
       } else {
-        this.dragging = true; this.offsetX = this.x - mx; this.offsetY = this.y - my;
+        this.dragging = true;
+        this.offsetX = this.x - mx;
+        this.offsetY = this.y - my;
         selectedTrait = this;
         return true;
       }
