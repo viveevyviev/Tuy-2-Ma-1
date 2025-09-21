@@ -29,7 +29,7 @@ let resetBtnX, resetBtnY, resetBtnW, resetBtnH;
 let cookBtnX, cookBtnY, cookBtnW, cookBtnH;
 let backBtnX, backBtnY, backBtnW, backBtnH; // This is for the 'cook' scene
 let screenshotBtnX, screenshotBtnY, screenshotBtnW, screenshotBtnH;
-let playBtnW, playBtnH; // Note: playBtnX and playBtnY removed
+let playBtnW, playBtnH; 
 let tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH;
 let homeBtnX, homeBtnY, homeBtnW, homeBtnH;
 
@@ -71,13 +71,8 @@ function preload() {
 }
 
 function setup() {
-  let w = windowWidth;
-  let h = w * 9 / 16;
-  if (h > windowHeight) {
-    h = windowHeight;
-    w = h * 16 / 9;
-  }
-  createCanvas(w, h);
+  // Use windowWidth and windowHeight directly for full screen
+  createCanvas(windowWidth, windowHeight);
 
   let baseButtonSize = width * 0.055;
   let largeButtonSize = width * 0.075;
@@ -90,20 +85,22 @@ function setup() {
   let spawnerTargetSize = width * 0.11; 
   let spawnedTraitScale = 0.2; 
 
-  const w1 = 0.09 * w, w2 = 0.172185430 * w;
-  const h1 = 0.353200 * h, h2 = 0.588668 * h;
+  // Spawner positions adjusted to be fully relative to width and height
+  const w1 = 0.09 * width, w2 = 0.172185430 * width;
+  const h1 = 0.353200 * height, h2 = 0.588668 * height;
   originalSpawners = [
     { img: yearningImg, x: w1, y: h1 }, { img: courageImg, x: w2, y: h1 },
-    { img: attentiveImg, x: w - w2, y: h1 }, { img: nestledImg, x: w1, y: h2 },
-    { img: anchoringImg, x: w2, y: h2 }, { img: defiantImg, x: w - w2, y: h2 },
-    { img: empatheticImg, x: w - w1, y: h1 }, { img: vulnerableImg, x: w - w1, y: h2 }
+    { img: attentiveImg, x: width - w2, y: h1 }, { img: nestledImg, x: w1, y: h2 },
+    { img: anchoringImg, x: w2, y: h2 }, { img: defiantImg, x: width - w2, y: h2 },
+    { img: empatheticImg, x: width - w1, y: h1 }, { img: vulnerableImg, x: width - w1, y: h2 }
   ].map(t => ({ ...t, targetWidth: spawnerTargetSize, spawnScale: spawnedTraitScale }));
   spawnerTraits = originalSpawners.map(s => new Trait(s.x, s.y, false, s.img, { targetWidth: s.targetWidth, spawnScale: s.spawnScale }));
 
   // --- Intro Scene Button ---
-  playBtnW = width * 0.15; playBtnH = playBtnW / 2.5; // Shared dimensions
+  playBtnW = width * 0.15; 
+  // Maintain aspect ratio or adjust if needed for different screen ratios
+  playBtnH = playBtnW / 2.5; 
   tutorialBtnW = playBtnW; tutorialBtnH = playBtnH;
-  // MODIFIED: Center the tutorial button on the X-axis
   tutorialBtnX = width / 2 - tutorialBtnW / 2; 
   tutorialBtnY = height * 0.72 - tutorialBtnH / 2;
 
@@ -144,13 +141,11 @@ function draw() {
   switch (currentScene) {
     case 'intro':
       image(popupImg, 0, 0, width, height);
-      // MODIFIED: The play button is no longer drawn here.
       drawButton(tutorialBtnImg, tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH);
       break;
 
     case 'tutorial':
       image(howtoImg, 0, 0, width, height);
-      // This button now takes the user to the main scene.
       drawButton(playBtnImg, homeBtnX, homeBtnY, homeBtnW, homeBtnH);
       break;
 
@@ -200,6 +195,14 @@ function draw() {
   }
 }
 
+// Function to handle resizing of the browser window
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  // Re-run setup to re-calculate all positions and sizes relative to the new window dimensions
+  setup(); 
+}
+
+
 function isMouseOver(x, y, w, h) {
   return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
 }
@@ -213,7 +216,6 @@ function mousePressed() {
 
   switch (currentScene) {
     case 'intro':
-      // MODIFIED: Removed the click handler for the play button.
       if (isMouseOver(tutorialBtnX, tutorialBtnY, tutorialBtnW, tutorialBtnH)) currentScene = 'tutorial';
       break;
     case 'tutorial':
@@ -312,6 +314,7 @@ function mouseReleased() {
 
 function drawButton(img, x, y, w, h) {
   push();
+  // Adjust image size to fit within button area while maintaining aspect ratio
   const imgAspect = img.width / img.height;
   const containerAspect = w / h;
   let drawW, drawH;
@@ -320,8 +323,9 @@ function drawButton(img, x, y, w, h) {
   } else {
     drawH = h; drawW = h * imgAspect;
   }
-  const padding = 0.8; 
+  const padding = 0.8; // Reduce image size slightly to create a visual border/padding
   drawW *= padding; drawH *= padding;
+
   if (isMouseOver(x, y, w, h) && !isTransforming) {
     drawingContext.shadowBlur = 15;
     drawingContext.shadowColor = color(255, 150, 200);
@@ -348,7 +352,7 @@ class Trait {
     this.dragging = false; this.offsetX = 0; this.offsetY = 0;
     this.initialDistance = 0; this.initialScale = this.scale;
     this.initialAngle = 0; this.initialRotation = 0;
-    this.handleSize = width * 0.01;
+    this.handleSize = width * 0.01; // Handle size also scales with width
     this.updateSize();
   }
   updateSize() { this.width = this.img.width * this.scale; this.height = this.img.height * this.scale; }
@@ -379,13 +383,12 @@ class Trait {
     let rotatedX = dx * cosA - dy * sinA; let rotatedY = dx * sinA + dy * cosA;
     if (abs(rotatedX) < this.width / 2 && abs(rotatedY) < this.height / 2) {
       if (!this.isTrait) {
-        // --- CHANGE HIGHLIGHTED HERE ---
-        // 1. Create the new trait directly at the mouse position (mx, my)
+        // Create the new trait directly at the mouse position (mx, my)
         let t = new Trait(mx, my, true, this.img, { initialScale: this.spawnScale });
         traits.push(t);
         selectedTrait = t;
         selectedTrait.dragging = true;
-        // 2. Set the offset to 0, because the trait's center is already at the mouse.
+        // Set the offset to 0, because the trait's center is already at the mouse.
         selectedTrait.offsetX = 0;
         selectedTrait.offsetY = 0;
         return true;
